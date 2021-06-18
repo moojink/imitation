@@ -62,6 +62,7 @@ class EpochOrBatchIteratorWithProgress:
         n_batches: Optional[int] = None,
         on_epoch_end: Optional[Callable[[], None]] = None,
         on_batch_end: Optional[Callable[[], None]] = None,
+        start_epoch_num: Optional[int] = 0,
     ):
         """Wraps DataLoader so that all BC batches can be processed in a one for-loop.
 
@@ -77,6 +78,8 @@ class EpochOrBatchIteratorWithProgress:
                 end of every epoch.
             on_batch_end: A callback function without parameters to be called at the
                 end of every batch.
+            start_epoch_num: (Only when resuming training from checkpoint) The epoch
+                number at which training is resumed.
         """
         if n_epochs is not None and n_batches is None:
             self.use_epochs = True
@@ -92,12 +95,15 @@ class EpochOrBatchIteratorWithProgress:
         self.n_batches = n_batches
         self.on_epoch_end = on_epoch_end
         self.on_batch_end = on_batch_end
+        self.start_epoch_num = start_epoch_num
+        self.n_epochs += start_epoch_num # when resuming training
 
     def __iter__(self) -> Iterable[Tuple[dict, dict]]:
         """Yields batches while updating tqdm display to display progress."""
         EVAL_INTERVAL = 5  # the num epochs after which we print/log eval stats
         samples_so_far = 0
         epoch_num = 0
+        epoch_num += self.start_epoch_num # when resuming training
         batch_num = 0
         batch_suffix = epoch_suffix = ""
         if self.use_epochs:
@@ -301,6 +307,8 @@ class BC:
         on_epoch_end: Callable[[], None] = None,
         on_batch_end: Callable[[], None] = None,
         log_interval: int = 100,
+        start_epoch_num: Optional[int] = 0,
+        num_batches_per_epoch: Optional[int] = 500,
     ):
         """Train with supervised learning for some number of epochs.
 
@@ -316,6 +324,10 @@ class BC:
             on_batch_end: Optional callback with no parameters to run at the end of each
                 batch.
             log_interval: Log stats after every log_interval batches.
+            start_epoch_num: (Only when resuming training from checkpoint) The epoch
+                number at which training is resumed.
+            num_batches_per_epoch: (Only when resuming training from checkpoint) The
+                number of batches per training epoch.
         """
         it = EpochOrBatchIteratorWithProgress(
             self.expert_data_loader,
@@ -323,6 +335,7 @@ class BC:
             n_batches=n_batches,
             on_epoch_end=on_epoch_end,
             on_batch_end=on_batch_end,
+            start_epoch_num=start_epoch_num,
         )
 
         logger.configure(folder=log_dir,format_strings="stdout,tensorboard")
@@ -339,7 +352,10 @@ class BC:
                 for stats in [stats_dict_it, stats_dict_loss]:
                     for k, v in stats.items():
                         logger.record(k, v)
-                logger.dump(batch_num)
+                # Adjust step number if resuming training so that we don't
+                # overwrite earlier training logs.
+                step = batch_num + start_epoch_num * num_batches_per_epoch
+                logger.dump(step)
             batch_num += 1
 
     def save_policy(self, policy_path: str) -> None:
