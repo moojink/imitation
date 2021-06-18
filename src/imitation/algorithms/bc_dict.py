@@ -73,7 +73,7 @@ class EpochOrBatchIteratorWithProgress:
                 __iter__. Exactly one of `n_epochs` and `n_batches` should be provided.
             n_batches: The number of batches to iterate through in one call to
                 __iter__. Exactly one of `n_epochs` and `n_batches` should be provided.
-            on_epoch_end: A callback function without parameters to be called at the
+            on_epoch_end: A callback function to be called at the
                 end of every epoch.
             on_batch_end: A callback function without parameters to be called at the
                 end of every batch.
@@ -95,7 +95,7 @@ class EpochOrBatchIteratorWithProgress:
 
     def __iter__(self) -> Iterable[Tuple[dict, dict]]:
         """Yields batches while updating tqdm display to display progress."""
-
+        EVAL_INTERVAL = 5  # the num epochs after which we print/log eval stats
         samples_so_far = 0
         epoch_num = 0
         batch_num = 0
@@ -134,8 +134,8 @@ class EpochOrBatchIteratorWithProgress:
                         if batch_num >= self.n_batches:
                             return
                 epoch_num += 1
-                if self.on_epoch_end is not None:
-                    self.on_epoch_end()
+                if self.on_epoch_end is not None and epoch_num % EVAL_INTERVAL == 0:
+                    self.on_epoch_end(epoch_num)
 
                 if self.use_epochs:
                     update_desc()
@@ -295,6 +295,7 @@ class BC:
     def train(
         self,
         *,
+        log_dir,
         n_epochs: Optional[int] = None,
         n_batches: Optional[int] = None,
         on_epoch_end: Callable[[], None] = None,
@@ -311,8 +312,7 @@ class BC:
                 training. Provide exactly one of `n_epochs` and `n_batches`.
             n_batches: Number of batches loaded from dataset before ending training.
                 Provide exactly one of `n_epochs` and `n_batches`.
-            on_epoch_end: Optional callback with no parameters to run at the end of each
-                epoch.
+            on_epoch_end: Optional callback to run at the end of each epoch.
             on_batch_end: Optional callback with no parameters to run at the end of each
                 batch.
             log_interval: Log stats after every log_interval batches.
@@ -324,6 +324,8 @@ class BC:
             on_epoch_end=on_epoch_end,
             on_batch_end=on_batch_end,
         )
+
+        logger.configure(folder=log_dir,format_strings="stdout,tensorboard")
 
         batch_num = 0
         for batch, stats_dict_it in it:
