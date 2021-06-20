@@ -37,6 +37,11 @@ def reconstruct_policy(
     return policy
 
 
+def reconstruct_optimizer_state(optimizer_state_path: str):
+    """Load a saved optimizer state."""
+    return th.load(optimizer_state_path)
+
+
 class ConstantLRSchedule:
     """A callable that returns a constant learning rate."""
 
@@ -365,3 +370,7 @@ class BC:
             policy_path: path to save policy to.
         """
         th.save(self.policy, policy_path)
+
+    def save_optimizer_state(self, optimizer_state_path: str) -> None:
+        """Save optimizer state to a path. Can be reloaded by `.reconstruct_optimizer_state()`."""
+        th.save(self.optimizer.state_dict(), optimizer_state_path)
