@@ -19,29 +19,6 @@ from imitation.data import types
 from imitation.policies import base
 
 
-def reconstruct_policy(
-    policy_path: str,
-    device: Union[th.device, str] = "auto",
-) -> policies.BasePolicy:
-    """Reconstruct a saved policy.
-
-    Args:
-        policy_path: path where `.save_policy()` has been run.
-        device: device on which to load the policy.
-
-    Returns:
-        policy: policy with reloaded weights.
-    """
-    policy = th.load(policy_path, map_location=utils.get_device(device))
-    assert isinstance(policy, policies.BasePolicy)
-    return policy
-
-
-def reconstruct_optimizer_state(optimizer_state_path: str):
-    """Load a saved optimizer state."""
-    return th.load(optimizer_state_path)
-
-
 class ConstantLRSchedule:
     """A callable that returns a constant learning rate."""
 
@@ -363,14 +340,10 @@ class BC:
                 logger.dump(step)
             batch_num += 1
 
-    def save_policy(self, policy_path: str) -> None:
-        """Save policy to a path. Can be reloaded by `.reconstruct_policy()`.
-
-        Args:
-            policy_path: path to save policy to.
-        """
-        th.save(self.policy, policy_path)
+    def save_policy_state(self, policy_state_path: str) -> None:
+        """Save policy state to a path."""
+        th.save(self.policy.state_dict(), policy_state_path)
 
     def save_optimizer_state(self, optimizer_state_path: str) -> None:
-        """Save optimizer state to a path. Can be reloaded by `.reconstruct_optimizer_state()`."""
+        """Save optimizer state to a path."""
         th.save(self.optimizer.state_dict(), optimizer_state_path)
