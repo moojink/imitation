@@ -35,7 +35,7 @@ class Trajectory:
     """A trajectory, e.g. a one episode rollout from an expert policy."""
 
     obs: np.ndarray
-    """Observations, shape (trajectory_len + 1, ) + observation_shape."""
+    """Observations, array of dicts, length (trajectory_len + 1, )."""
 
     acts: np.ndarray
     """Actions, shape (trajectory_len, ) + action_shape."""

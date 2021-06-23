@@ -42,6 +42,14 @@ class BetaSchedule(abc.ABC):
               actions will be sampled the remainder of the time.
         """
 
+class ConstantBetaSchedule(BetaSchedule):
+    def __init__(self, beta: float):
+        self.beta = beta
+
+    def __call__(self, round_num: int) -> float:
+        assert round_num >= 0
+        return self.beta
+
 
 class LinearBetaSchedule(BetaSchedule):
     """
@@ -369,7 +377,7 @@ class DAggerTrainer:
             (
                 (act,),
                 _,
-            ) = self.bc_trainer.policy.predict(obs[None])
+            ) = self.bc_trainer.policy.predict({k: v[None] for k, v in obs.items()})
             return act
 
         collector = InteractiveTrajectoryCollector(
