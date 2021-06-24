@@ -18,7 +18,7 @@ import torch as th
 from stable_baselines3.common import utils
 from torch.utils import data as th_data
 
-from imitation.algorithms import bc_dict
+from imitation.algorithms import bc_dict_dagger
 from imitation.data import rollout, types
 from imitation.util import util
 
@@ -281,7 +281,7 @@ class DAggerTrainer:
         self._last_loaded_round = -1
         self._all_demos = []
 
-        self.bc_trainer = bc_dict.BC(
+        self.bc_trainer = bc_dict_dagger.BC(
             self.env.observation_space, self.env.action_space, **self.bc_kwargs
         )
 
@@ -352,14 +352,15 @@ class DAggerTrainer:
 
         Returns:
             round_num: new round number after advancing the round counter.
+            last_step: The last step number seen while training (for logging purposes).
         """
         logging.info("Loading demonstrations")
         self._try_load_demos()
         logging.info(f"Training at round {self.round_num}")
-        self.bc_trainer.train(**train_kwargs)
+        last_step = self.bc_trainer.train(**train_kwargs)
         self.round_num += 1
         logging.info(f"New round number is {self.round_num}")
-        return self.round_num
+        return self.round_num, last_step
 
     def get_trajectory_collector(self) -> InteractiveTrajectoryCollector:
         """Create trajectory collector to extend current round's demonstration set.
