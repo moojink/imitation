@@ -80,7 +80,7 @@ class EpochOrBatchIteratorWithProgress:
 
     def __iter__(self) -> Iterable[Tuple[dict, dict]]:
         """Yields batches while updating tqdm display to display progress."""
-        EVAL_INTERVAL = 1  # the num epochs after which we print/log eval stats
+        EVAL_INTERVAL = 5  # the num epochs after which we print/log eval stats
         samples_so_far = 0
         epoch_num = 0
         batch_num = 0
@@ -285,7 +285,7 @@ class BC:
         n_batches: Optional[int] = None,
         on_epoch_end: Callable[[], None] = None,
         on_batch_end: Callable[[], None] = None,
-        log_interval: int = 1, # TODO (Moo Jin): adjust this
+        log_interval: int = 100,
         last_step: int = 0,
         round_num: int = 0,
     ):
