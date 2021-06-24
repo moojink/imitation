@@ -286,6 +286,15 @@ class DAggerTrainer:
         )
 
     def _load_all_demos(self):
+        """
+        Load all new demonstrations and return both old and new demonstrations
+        as a flattened array.
+
+        Returns:
+            demo_transitions: Flattened array of all demonstrations.
+            num_demos_by_round: A list containing the number of new demonstrations
+                loaded per round.
+        """
         num_demos_by_round = []
         for round_num in range(self._last_loaded_round + 1, self.round_num + 1):
             round_dir = self._demo_dir_path_for_round(round_num)
@@ -297,6 +306,14 @@ class DAggerTrainer:
         return demo_transitions, num_demos_by_round
 
     def _get_demo_paths(self, round_dir):
+        """Get the file paths of the demonstrations for a specific round.
+
+        Args:
+            round_dir: The directory of a specific round.
+
+        Returns:
+            A list of file paths of demonstration files in the round directory.
+        """
         return [
             os.path.join(round_dir, p)
             for p in os.listdir(round_dir)
@@ -304,11 +321,20 @@ class DAggerTrainer:
         ]
 
     def _demo_dir_path_for_round(self, round_num=None):
+        """
+        Get the directory of the demonstrations for a specific round number,
+        or if no round number is given, return the directory corresponding
+        to the current round.
+        """
         if round_num is None:
             round_num = self.round_num
         return os.path.join(self.scratch_dir, "demos", f"round-{round_num:03d}")
 
     def _check_has_latest_demos(self):
+        """
+        Check whether there are any new demonstrations that haven't been loaded
+        and trained on. If not, throw an error.
+        """
         demo_dir = self._demo_dir_path_for_round()
         demo_paths = self._get_demo_paths(demo_dir) if os.path.isdir(demo_dir) else []
         if len(demo_paths) == 0:
@@ -319,7 +345,14 @@ class DAggerTrainer:
             )
 
     def _try_load_demos(self):
+        """
+        If there are new demonstrations that we haven't yet trained on,
+        load all the demonstrations (old and new) and set the new DataLoader
+        for training.
+        """
+        # Check that the latest demonstrations files exist.
         self._check_has_latest_demos()
+        # Only load the demos we haven't loaded before.
         if self._last_loaded_round < self.round_num:
             transitions, num_demos = self._load_all_demos()
             logging.info(
@@ -332,6 +365,7 @@ class DAggerTrainer:
                 shuffle=True,
                 collate_fn=types.transitions_collate_fn,
             )
+            # Set the DataLoader for training.
             self.bc_trainer.set_expert_data_loader(data_loader)
             self._last_loaded_round = self.round_num
 
