@@ -321,6 +321,17 @@ class BC:
         for batch, stats_dict_it in it:
             loss, stats_dict_loss = self._calculate_loss(batch["obs"], batch["acts"])
 
+            # # Uncomment to get frames from the training phase, e.g. to verify that
+            # # the textures are present.
+            # import ipdb
+            # ipdb.set_trace()
+            # from PIL import Image
+            # import numpy as np
+            # img_arr = np.array(batch['obs']['im_rgb'][0])
+            # img_arr = np.ascontiguousarray(img_arr.transpose(1,2,0))
+            # img = Image.fromarray(img_arr)
+            # img.save('./test.jpg')
+
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
