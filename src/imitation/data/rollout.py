@@ -391,7 +391,7 @@ def flatten_trajectories(
         parts["obs"].append(obs[:-1])
         parts["next_obs"].append(obs[1:])
 
-        dones = np.zeros(len(traj.acts), dtype=np.bool)
+        dones = np.zeros(len(traj.acts), dtype=bool)
         dones[-1] = True
         parts["dones"].append(dones)
 

@@ -150,7 +150,7 @@ class InteractiveTrajectoryCollector(gym.Wrapper):
             obs: first observation of a new trajectory.
         """
         self.traj_accum = rollout.TrajectoryAccumulator()
-        obs = self.env.reset()
+        obs, info = self.env.reset()
         self._last_obs = obs
         self.traj_accum.add_step({"obs": obs})
         self._done_before = False
@@ -171,7 +171,7 @@ class InteractiveTrajectoryCollector(gym.Wrapper):
             instead.
 
         Returns:
-          next_obs, reward, done, info: unchanged output of `self.env.step()`.
+          next_obs, reward, terminated, truncated, info: unchanged output of `self.env.step()`.
         """
         assert self._is_reset, "call .reset() before .step()"
 
@@ -182,13 +182,14 @@ class InteractiveTrajectoryCollector(gym.Wrapper):
             actual_act = user_action
 
         # actually step the env & record data as appropriate
-        next_obs, reward, done, info = self.env.step(actual_act)
+        next_obs, reward, terminated, truncated, info = self.env.step(actual_act)
         self._last_obs = next_obs
         self.traj_accum.add_step(
             {"acts": user_action, "obs": next_obs, "rews": reward, "infos": info}
         )
 
         # if we're finished, then save the trajectory & print a message
+        done = terminated or truncated
         if done and not self._done_before:
             trajectory = self.traj_accum.finish_trajectory()
             timestamp = util.make_unique_timestamp()
@@ -203,7 +204,7 @@ class InteractiveTrajectoryCollector(gym.Wrapper):
             # over until the user resets
             self._done_before = True
 
-        return next_obs, reward, done, info
+        return next_obs, reward, terminated, truncated, info
 
 
 class NeedsDemosException(Exception):
