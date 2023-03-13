@@ -155,7 +155,7 @@ class InteractiveTrajectoryCollector(gym.Wrapper):
         self.traj_accum.add_step({"obs": obs})
         self._done_before = False
         self._is_reset = True
-        return obs
+        return obs, info
 
     def step(self, user_action: np.ndarray) -> Tuple[np.ndarray, float, bool, dict]:
         """Steps the environment.
