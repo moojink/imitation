@@ -248,7 +248,7 @@ def generate_trajectories(
     trajectories = []
     # accumulator for incomplete trajectories
     trajectories_accum = TrajectoryAccumulator()
-    obs = venv.reset()
+    obs, info = venv.reset()
     for env_idx, ob in enumerate(obs):
         # Seed with first obs only. Inside loop, we'll only add second obs from
         # each (s,a,r,s') tuple, under the same "obs" key again. That way we still
@@ -264,10 +264,11 @@ def generate_trajectories(
     # are complete.
     #
     # To start with, all environments are active.
-    active = np.ones(venv.num_envs, dtype=np.bool)
+    active = np.ones(venv.num_envs, dtype=bool)
     while np.any(active):
         acts, _ = get_action(obs, deterministic=deterministic_policy)
-        obs, rews, dones, infos = venv.step(acts)
+        obs, rews, terminateds, truncateds, infos = venv.step(acts)
+        dones = terminateds or truncateds
 
         # If an environment is inactive, i.e. the episode completed for that
         # environment after `sample_until(trajectories)` was true, then we do
